@@ -1,19 +1,21 @@
 #!/usr/bin/python
 
-# ~~~~~==============   HOW TO RUN   ==============~~~~~
+# ~~~~==============   HOW TO RUN   ==============~~~~
 # 1) Configure things in CONFIGURATION section
 # 2) Change permissions: chmod +x bot.py
 # 3) Run in loop: while true; do ./bot.py; sleep 1; done
 
-from __future__ import print_function
+from _future_ import print_function
 
 import sys
 import socket
 import json
+import time
+#import numpy as np
 
-# ~~~~~============== CONFIGURATION  ==============~~~~~
+# ~~~~============== CONFIGURATION  ==============~~~~
 # replace REPLACEME with your team name!
-team_name="REPLACEME"
+team_name="TOURISTS"
 # This variable dictates whether or not the bot is connecting to the prod
 # or test exchange. Be careful with this switch!
 test_mode = True
@@ -28,7 +30,7 @@ prod_exchange_hostname="production"
 port=25000 + (test_exchange_index if test_mode else 0)
 exchange_hostname = "test-exch-" + team_name if test_mode else prod_exchange_hostname
 
-# ~~~~~============== NETWORKING CODE ==============~~~~~
+# ~~~~============== NETWORKING CODE ==============~~~~
 def connect():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((exchange_hostname, port))
@@ -42,7 +44,7 @@ def read_from_exchange(exchange):
     return json.loads(exchange.readline())
 
 
-# ~~~~~============== MAIN LOOP ==============~~~~~
+# ~~~~============== MAIN LOOP ==============~~~~
 
 def main():
     exchange = connect()
@@ -53,6 +55,20 @@ def main():
     # Since many write messages generate marketdata, this will cause an
     # exponential explosion in pending messages. Please, don't do that!
     print("The exchange replied:", hello_from_exchange, file=sys.stderr)
+    actions = ["add", "cancel"]
+    symbols = ["BOND", "GS", "MS", "USD", "VALBZ", "VALE", "WFC", "XLF"]
 
-if __name__ == "__main__":
+    #while True:
+        # TODO replace
+    action = "add"
+    id = 0
+    symbol = symbols[id]
+    write_to_exchange(exchange, {"type": action, "order_id": id, "symbol": symbol, "dir": "BUY", "price": 998, "size": 50})
+    # id += 1
+    time.sleep(180)
+    write_to_exchange(exchange, {"type": action, "order_id": id, "symbol": symbol, "dir": "SELL", "price": 1002, "size": 50})
+
+
+
+if _name_ == "_main_":
     main()
