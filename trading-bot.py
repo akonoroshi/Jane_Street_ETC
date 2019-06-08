@@ -32,6 +32,8 @@ prod_exchange_hostname="production"
 port=25000 + (test_exchange_index if test_mode else 0)
 exchange_hostname = "test-exch-" + team_name if test_mode else prod_exchange_hostname
 
+symbols = ["BOND", "GS", "MS", "USD", "VALBZ", "VALE", "WFC", "XLF"]
+
 # ~~~~============== NETWORKING CODE ==============~~~~
 def connect():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -90,21 +92,23 @@ def main():
         if from_exchange['type'] != 'trade' and from_exchange['symbol'] != symbol:
             continue
 
-        # if len(trainding_history[from_exchange['symbol']]) == 0:
-        #     trainding_history[from_exchange['symbol']].append(from_exchange['price'])
-        # else:
-        #     trainding_history[from_exchange['symbol']][0] = from_exchange['price']
-
         price = from_exchange['price']
         action = dynaQ.choose_action(price)
         id += 1
-        size = 50
+        size = 10
+        limit = 100
+
+
+        write_to_exchange(exchange, {"type": "hello", "team": team_name.upper()})
+        hello_from_exchange = read_from_exchange(exchange)
+        position = hello_from_exchange['symbols'][symbols.index(symbol)]['position']
+
 
         # TODO price は考慮の余地あり
-        if action == 'buy':
+        if action == 'buy' and position + size <= limit:
             buy(symbol, price, id, size, exchange)
 
-        elif action == 'sell':
+        elif action == 'sell' and position - size >= -limit:
             sell(symbol, price, id, size, exchange)
 
         #TODO 約定しなかったら死ぬ
@@ -113,19 +117,9 @@ def main():
         time.sleep(5)
 
         #TODO nothingの時の計算がだるい
-        reward = reward_calculator(price, symbol, action, exchange)
+        reward_dict = reward_calculator(price, symbol, action, exchange)
 
-
-
-
-
-    # action = "add"
-    # id = 0
-    # symbol = symbols[id]
-    # write_to_exchange(exchange, {"type": action, "order_id": id, "symbol": symbol, "dir": "BUY", "price": 998, "size": 50})
-    # # id += 1
-    # time.sleep(180)
-    # write_to_exchange(exchange, {"type": action, "order_id": id, "symbol": symbol, "dir": "SELL", "price": 1002, "size": 50})
+        dynaQ.learn(price, action, reward_dict['reward'], reward_dict['current_trading_price'])
 
 
 def wait_trade_complete(exchange, symbol: str, size: int, id: int):
@@ -142,9 +136,6 @@ def wait_trade_complete(exchange, symbol: str, size: int, id: int):
             break
 
 
-def get_price(symbol: str, exchange_info: dict) -> list:
-    pass
-
 def buy(symbol: str, price: int, id: int, size: int, exchange):
     write_to_exchange(exchange, {"type": "add", "order_id": id, "symbol": symbol, "dir": "BUY", "price": price, "size": size})
 
@@ -153,15 +144,45 @@ def sell(symbol: str, price: int, id: int, size: int, exchange):
     write_to_exchange(exchange, {"type": "add", "order_id": id, "symbol": symbol, "dir": "SELL", "price": price, "size": size})
 
 
-def fair_price_calculator(symbol, exchange_info):
-    pass
-
-
 def reward_calculator(ordered_price: int, symbol: str, action: str, exchange):
     from_exchange = read_from_exchange(exchange)
+    reward_dict = {
+        'reward': 0,
+        'current_trading_price': 0
+    }
 
-    if from_exchange['type'] != 'trade' and from_exchange['symbol'] != symbol:
-        continue
+    while True:
+        if from_exchange['type'] != 'trade' and from_exchange['symbol'] != symbol:
+            continue
+
+        current_trading_price = from_exchange['price']
+
+        if action == 'buy':
+            reward = current_trading_price - ordered_price
+            reward_dict['reward'] = reward
+
+        elif action == 'sell':
+            reward = ordered_price - current_trading_price
+            reward_dict['reward'] = reward
+
+        else:
+            write_to_exchange(exchange, {"type": "hello", "team": team_name.upper()})
+
+            hello_from_exchange = read_from_exchange(exchange)
+            position = hello_from_exchange['symbols'][symbols.index(symbol)]['position']
+
+            if position > 0:
+                # reward小さくするかも
+                reward = current_trading_price - ordered_price
+                reward_dict['reward'] = reward
+            else:
+                reward = ordered_price - current_trading_price
+                reward_dict['reward'] = reward
+
+        reward_dict['current_trading_price'] = current_trading_price
+        break
+
+    return reward_dict
 
 
 if __name__ == "_main_":
