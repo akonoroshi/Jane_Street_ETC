@@ -45,7 +45,6 @@ def read_from_exchange(exchange):
 
 
 # ~~~~============== MAIN LOOP ==============~~~~
-
 def main():
     exchange = connect()
     write_to_exchange(exchange, {"type": "hello", "team": team_name.upper()})
@@ -58,8 +57,16 @@ def main():
     actions = ["add", "cancel"]
     symbols = ["BOND", "GS", "MS", "USD", "VALBZ", "VALE", "WFC", "XLF"]
 
+
     #while True:
-        # TODO replace
+        # TODO send price information to function
+        # TODO function(price)
+        # TODO get_decision
+        # TODO find the best price for buying the
+        # TODO buy
+        # TODO 一定時間がたってrewardを送る
+        ## learning
+
     action = "add"
     id = 0
     symbol = symbols[id]
