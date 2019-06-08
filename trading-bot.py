@@ -13,6 +13,8 @@ import json
 import time
 #import numpy as np
 
+from Dyna_Q import *
+
 # ~~~~============== CONFIGURATION  ==============~~~~
 # replace REPLACEME with your team name!
 team_name="TOURISTS"
@@ -46,6 +48,11 @@ def read_from_exchange(exchange):
 
 # ~~~~============== MAIN LOOP ==============~~~~
 def main():
+    actions = ['buy', 'sell', 'nothing']
+    gamma = 0.8
+
+    dynaQ = Dyna_Q(actions, gamma)
+
     exchange = connect()
     write_to_exchange(exchange, {"type": "hello", "team": team_name.upper()})
     hello_from_exchange = read_from_exchange(exchange)
@@ -54,7 +61,7 @@ def main():
     # Since many write messages generate marketdata, this will cause an
     # exponential explosion in pending messages. Please, don't do that!
     print("The exchange replied:", hello_from_exchange, file=sys.stderr)
-    actions = ["add", "cancel"]
+
     symbols = ["BOND", "GS", "MS", "USD", "VALBZ", "VALE", "WFC", "XLF"]
 
 
@@ -76,6 +83,23 @@ def main():
     write_to_exchange(exchange, {"type": action, "order_id": id, "symbol": symbol, "dir": "SELL", "price": 1002, "size": 50})
 
 
+def get_price(symbol: str, exchange_info: dict) -> list:
+    pass
+
+def buy(symbol: str, price: int, exchange):
+    pass
+
+
+def sell(symbol: str, price: int, exchange):
+    pass
+
+
+def fair_price_calculator(symbol, exchange_info):
+    pass
+
+
+def reward_cauculator():
+    pass
 
 if _name_ == "_main_":
     main()
