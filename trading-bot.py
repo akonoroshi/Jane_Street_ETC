@@ -65,6 +65,15 @@ def main():
     symbols = ["BOND", "GS", "MS", "USD", "VALBZ", "VALE", "WFC", "XLF"]
 
 
+    trainding_history = {"BOND": [],
+                         "GS": [],
+                         "MS": [],
+                         "USD": [],
+                         "VALBZ": [],
+                         "VALE": [],
+                         "WFC": [],
+                         "XLF": [],
+                         }
     while True:
         # TODO send price information to function
         # TODO function(price)
@@ -75,33 +84,85 @@ def main():
         ## learning
 
         from_exchange = read_from_exchange(exchange)
+        symbol = "BOND"
+        id = 0
 
-    action = "add"
-    id = 0
-    symbol = symbols[id]
-    write_to_exchange(exchange, {"type": action, "order_id": id, "symbol": symbol, "dir": "BUY", "price": 998, "size": 50})
-    # id += 1
-    time.sleep(180)
-    write_to_exchange(exchange, {"type": action, "order_id": id, "symbol": symbol, "dir": "SELL", "price": 1002, "size": 50})
+        if from_exchange['type'] != 'trade' and from_exchange['symbol'] != symbol:
+            continue
+
+        # if len(trainding_history[from_exchange['symbol']]) == 0:
+        #     trainding_history[from_exchange['symbol']].append(from_exchange['price'])
+        # else:
+        #     trainding_history[from_exchange['symbol']][0] = from_exchange['price']
+
+        price = from_exchange['price']
+        action = dynaQ.choose_action(price)
+        id += 1
+        size = 50
+
+        # TODO price は考慮の余地あり
+        if action == 'buy':
+            buy(symbol, price, id, size, exchange)
+
+        elif action == 'sell':
+            sell(symbol, price, id, size, exchange)
+
+        #TODO 約定しなかったら死ぬ
+        wait_trade_complete(exchange, symbol, size, id)
+
+        time.sleep(5)
+
+        #TODO nothingの時の計算がだるい
+        reward = reward_calculator(price, symbol, action, exchange)
+
+
+
+
+
+    # action = "add"
+    # id = 0
+    # symbol = symbols[id]
+    # write_to_exchange(exchange, {"type": action, "order_id": id, "symbol": symbol, "dir": "BUY", "price": 998, "size": 50})
+    # # id += 1
+    # time.sleep(180)
+    # write_to_exchange(exchange, {"type": action, "order_id": id, "symbol": symbol, "dir": "SELL", "price": 1002, "size": 50})
+
+
+def wait_trade_complete(exchange, symbol: str, size: int, id: int):
+    unfilled_size = size
+
+    while True:
+        from_exchange = read_from_exchange(exchange)
+        if from_exchange['type'] != 'fill' and from_exchange['order_id'] != id:
+            continue
+
+        unfilled_size -= from_exchange['size']
+
+        if unfilled_size == 0:
+            break
 
 
 def get_price(symbol: str, exchange_info: dict) -> list:
     pass
 
-def buy(symbol: str, price: int, id: int, exchange):
-    write_to_exchange(exchange, {"type": "add", "order_id": id, "symbol": symbol, "dir": "BUY", "price": price, "size": 50})
+def buy(symbol: str, price: int, id: int, size: int, exchange):
+    write_to_exchange(exchange, {"type": "add", "order_id": id, "symbol": symbol, "dir": "BUY", "price": price, "size": size})
 
 
-def sell(symbol: str, price: int, id: int, exchange):
-    write_to_exchange(exchange, {"type": "add", "order_id": id, "symbol": symbol, "dir": "SELL", "price": price, "size": 50})
+def sell(symbol: str, price: int, id: int, size: int, exchange):
+    write_to_exchange(exchange, {"type": "add", "order_id": id, "symbol": symbol, "dir": "SELL", "price": price, "size": size})
 
 
 def fair_price_calculator(symbol, exchange_info):
     pass
 
 
-def reward_calculator():
-    pass
+def reward_calculator(ordered_price: int, symbol: str, action: str, exchange):
+    from_exchange = read_from_exchange(exchange)
+
+    if from_exchange['type'] != 'trade' and from_exchange['symbol'] != symbol:
+        continue
+
 
 if __name__ == "_main_":
     main()
