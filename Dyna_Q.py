@@ -38,7 +38,7 @@ class Dyna_Q:
         # UCB1
         max_value = 0
         max_action = None
-        num_state = sum(sum(self.tc[observation][act].values() for act in self.actions))
+        num_state = sum(sum(self.tc[observation][act].values()) for act in self.actions)
         if num_state < 1:
             num_state = 1
         for act in self.actions:
