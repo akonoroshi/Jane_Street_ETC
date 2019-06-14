@@ -55,11 +55,10 @@ def main():
     for i in range(8):
         newpid = os.fork()
         if newpid == 0:
-            index += 1
             order_id = index * 100
             break
         else:
-            continue
+            index += 1
 
     position = 0
     # position = hello_from_exchange['symbols'][index]['position']
